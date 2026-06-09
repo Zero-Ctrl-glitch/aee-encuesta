@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Panel de Resultados – AEE Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root{--pucp-blue:#8B0000;--pucp-blue-mid:#C0392B;--pucp-blue-light:#E74C3C;--pucp-gold:#D4A017;--pucp-gold-light:#F4C430;--white:#fff;--off-white:#f5f7fa;--light-gray:#e8edf4;--text-dark:#1a2332;--text-mid:#4a5568;--text-light:#718096;--error:#c62828;--error-bg:#ffebee;--shadow:0 4px 24px rgba(139,0,0,0.10);--shadow-lg:0 8px 40px rgba(139,0,0,0.16);--radius:14px;--radius-sm:8px;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Source Sans 3',sans-serif;background:var(--off-white);color:var(--text-dark);min-height:100vh;background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(192,57,43,0.12) 0%,transparent 70%);}
+    #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+    .login-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:48px 40px;width:100%;max-width:420px;text-align:center;border:1px solid rgba(192,57,43,0.07);animation:fadeUp .4s ease;}
+    .login-logo{width:72px;height:72px;background:linear-gradient(135deg,var(--pucp-blue),var(--pucp-blue-mid));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-family:'Playfair Display',serif;font-size:22px;color:var(--white);font-weight:700;box-shadow:0 4px 16px rgba(139,0,0,0.3);}
+    .login-card h1{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--pucp-blue);margin-bottom:6px;}
+    .login-card>p{font-size:0.88rem;color:var(--text-light);margin-bottom:28px;}
+    .login-input{width:100%;padding:13px 16px;border:1.5px solid var(--light-gray);border-radius:var(--radius-sm);font-family:'Source Sans 3',sans-serif;font-size:0.95rem;color:var(--text-dark);background:var(--off-white);outline:none;text-align:center;letter-spacing:4px;transition:border-color .2s,box-shadow .2s;margin-bottom:16px;}
+    .login-input:focus{border-color:var(--pucp-blue-mid);box-shadow:0 0 0 3px rgba(192,57,43,0.12);background:var(--white);}
+    .login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--pucp-blue),var(--pucp-blue-mid));color:var(--white);border:none;border-radius:var(--radius-sm);font-family:'Source Sans 3',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:opacity .2s,transform .15s;box-shadow:0 4px 14px rgba(139,0,0,0.25);}
+    .login-btn:hover{opacity:0.9;transform:translateY(-1px);}
+    .login-error{display:none;background:var(--error-bg);color:var(--error);border-radius:var(--radius-sm);padding:10px 14px;font-size:0.85rem;margin-top:12px;}
+    .login-error.show{display:block;}
+    .login-hint{font-size:0.75rem;color:var(--text-light);margin-top:16px;}
+    #dashboard{display:none;}
+    .site-header{background:linear-gradient(135deg,var(--pucp-blue) 0%,var(--pucp-blue-mid) 60%,var(--pucp-blue-light) 100%);color:var(--white);position:relative;overflow:hidden;}
+    .site-header::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='rgba(255,255,255,0.05)' stroke-width='1'/%3E%3C/svg%3E") repeat;background-size:80px;}
+    .header-inner{max-width:1200px;margin:0 auto;padding:28px 24px;position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+    .header-left{display:flex;align-items:center;gap:16px;}
+    .header-logo{width:50px;height:50px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:15px;font-weight:700;border:1.5px solid rgba(255,255,255,0.3);}
+    .header-text h1{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;}
+    .header-text p{font-size:0.8rem;opacity:0.75;}
+    .header-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+    .btn-logout{background:rgba(255,255,255,0.15);color:var(--white);border:1.5px solid rgba(255,255,255,0.3);border-radius:var(--radius-sm);padding:8px 18px;font-size:0.85rem;font-family:'Source Sans 3',sans-serif;cursor:pointer;transition:background .2s;white-space:nowrap;}
+    .btn-logout:hover{background:rgba(255,255,255,0.25);}
+    .header-bar{height:4px;background:linear-gradient(90deg,var(--pucp-gold),var(--pucp-gold-light),var(--pucp-gold));}
+    .page-wrap{max-width:1200px;margin:0 auto;padding:32px 16px 60px;}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px;}
+    .stat-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;border:1px solid rgba(192,57,43,0.07);border-top:3px solid var(--pucp-blue-mid);}
+    .stat-card .stat-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--pucp-blue);line-height:1;}
+    .stat-card .stat-label{font-size:0.8rem;color:var(--text-light);margin-top:4px;font-weight:500;}
+    .stat-card .stat-icon{font-size:22px;margin-bottom:8px;}
+    .controls{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 24px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;border:1px solid rgba(192,57,43,0.07);}
+    .control-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px;}
+    .control-group label{font-size:0.78rem;font-weight:600;color:var(--pucp-blue);text-transform:uppercase;letter-spacing:0.5px;}
+    .control-group select,.control-group input{padding:9px 12px;border:1.5px solid var(--light-gray);border-radius:var(--radius-sm);font-size:0.88rem;font-family:'Source Sans 3',sans-serif;color:var(--text-dark);background:var(--off-white);outline:none;transition:border-color .2s;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23C0392B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:34px;}
+    .control-group input{background-image:none;padding-right:12px;}
+    .btn-pdf{padding:10px 22px;background:linear-gradient(135deg,var(--pucp-blue),var(--pucp-blue-mid));color:var(--white);border:none;border-radius:var(--radius-sm);font-size:0.88rem;font-family:'Source Sans 3',sans-serif;font-weight:600;cursor:pointer;transition:opacity .2s,transform .15s;white-space:nowrap;align-self:flex-end;box-shadow:0 3px 12px rgba(139,0,0,0.2);}
+    .btn-pdf:hover{opacity:0.88;transform:translateY(-1px);}
+    .btn-clear{padding:10px 20px;background:transparent;color:var(--error);border:1.5px solid var(--error);border-radius:var(--radius-sm);font-size:0.88rem;font-family:'Source Sans 3',sans-serif;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap;align-self:flex-end;}
+    .btn-clear:hover{background:var(--error-bg);}
+    .btn-refresh{padding:10px 20px;background:transparent;color:var(--pucp-blue-mid);border:1.5px solid var(--pucp-blue-mid);border-radius:var(--radius-sm);font-size:0.88rem;font-family:'Source Sans 3',sans-serif;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap;align-self:flex-end;}
+    .btn-refresh:hover{background:rgba(192,57,43,0.06);}
+    .no-data{text-align:center;padding:60px 24px;color:var(--text-light);}
+    .no-data .no-data-icon{font-size:48px;margin-bottom:14px;}
+    .no-data h3{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--text-mid);margin-bottom:6px;}
+    .section-title{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--pucp-blue);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+    .jdp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px;margin-bottom:28px;}
+    .jdp-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;border:1px solid rgba(192,57,43,0.07);transition:box-shadow .2s,transform .15s;}
+    .jdp-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+    .jdp-card-header{background:linear-gradient(90deg,var(--pucp-blue),var(--pucp-blue-mid));padding:16px 20px;color:var(--white);}
+    .jdp-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;margin-bottom:3px;}
+    .jdp-meta{font-size:0.78rem;opacity:0.8;display:flex;gap:12px;flex-wrap:wrap;}
+    .jdp-body{padding:18px 20px;}
+    .overall-score{display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--off-white);border-radius:var(--radius-sm);margin-bottom:14px;}
+    .score-big{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--pucp-blue);line-height:1;}
+    .score-stars{color:var(--pucp-gold-light);font-size:1.2rem;}
+    .score-info .score-label{font-size:0.78rem;color:var(--text-light);font-weight:500;}
+    .score-info .vote-count{font-size:0.82rem;color:var(--text-mid);}
+    .criteria-list{list-style:none;margin-bottom:12px;}
+    .criteria-list li{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--light-gray);font-size:0.85rem;}
+    .criteria-list li:last-child{border-bottom:none;}
+    .c-name{color:var(--text-mid);}
+    .c-wrap{display:flex;align-items:center;gap:8px;}
+    .c-bar-bg{width:80px;height:6px;background:var(--light-gray);border-radius:3px;overflow:hidden;}
+    .c-bar-fill{height:100%;background:linear-gradient(90deg,var(--pucp-blue-mid),var(--pucp-blue-light));border-radius:3px;}
+    .c-val{font-weight:600;color:var(--pucp-blue);font-size:0.85rem;min-width:28px;text-align:right;}
+    .keywords-wrap{margin-top:10px;padding-top:10px;border-top:1px dashed var(--light-gray);}
+    .keywords-label{font-size:0.75rem;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+    .keywords{display:flex;flex-wrap:wrap;gap:5px;}
+    .keyword-tag{background:rgba(192,57,43,0.09);color:var(--pucp-blue-mid);border-radius:20px;padding:3px 10px;font-size:0.75rem;font-weight:600;}
+    .comments-section{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;border:1px solid rgba(192,57,43,0.07);margin-bottom:28px;}
+    .comments-header{background:linear-gradient(90deg,var(--pucp-blue),var(--pucp-blue-mid));padding:16px 24px;color:var(--white);font-family:'Playfair Display',serif;font-size:1rem;display:flex;align-items:center;gap:10px;}
+    .comments-table-wrap{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+    thead{background:var(--off-white);}
+    thead th{padding:12px 16px;text-align:left;font-weight:600;color:var(--pucp-blue);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid var(--light-gray);white-space:nowrap;}
+    tbody tr{border-bottom:1px solid var(--light-gray);transition:background .15s;}
+    tbody tr:hover{background:rgba(192,57,43,0.03);}
+    tbody td{padding:11px 16px;color:var(--text-mid);vertical-align:top;}
+    .td-name{font-weight:600;color:var(--text-dark);}
+    .td-score{font-weight:700;color:var(--pucp-blue);}
+    .star-inline{color:var(--pucp-gold-light);}
+    .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;background:var(--light-gray);color:var(--text-mid);}
+    .page-footer{text-align:center;color:var(--text-light);font-size:0.78rem;margin-top:8px;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">AEE</div>
+    <h1>Panel de Administrador</h1>
+    <p>Ingresa la contraseña para acceder a los resultados de la encuesta</p>
+    <input type="password" class="login-input" id="pwd-input" placeholder="••••••••"/>
+    <button class="login-btn" onclick="doLogin()">Acceder al panel →</button>
+    <div class="login-error" id="login-error">Contraseña incorrecta. Inténtalo de nuevo.</div>
+    <p class="login-hint">🔒 Acceso restringido al coordinador del curso</p>
+  </div>
+</div>
+
+<div id="dashboard">
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <div class="header-logo">AEE</div>
+        <div class="header-text">
+          <h1>Panel de Resultados</h1>
+          <p>Asociación de Estudiantes de Ingeniería Electrónica (AEE)</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
+      </div>
+    </div>
+    <div class="header-bar"></div>
+  </header>
+
+  <div class="page-wrap">
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label>Filtrar por Curso</label>
+        <select id="filter-curso" onchange="renderDashboard()">
+          <option value="">Todos los cursos</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Filtrar por Horario</label>
+        <select id="filter-horario" onchange="renderDashboard()">
+          <option value="">Todos los horarios</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Buscar JdP</label>
+        <input type="text" id="search-jdp" placeholder="Nombre del JdP…" oninput="renderDashboard()"/>
+      </div>
+      <button class="btn-pdf" onclick="generatePDF()">📄 Generar Reporte PDF</button>
+      <button class="btn-refresh" onclick="refreshData()">🔄 Actualizar</button>
+      <button class="btn-clear" onclick="clearAll()">🗑 Borrar datos</button>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loading-indicator" style="display:none;align-items:center;justify-content:center;gap:12px;background:#fff;border-radius:14px;padding:24px;margin-bottom:20px;box-shadow:0 4px 24px rgba(139,0,0,0.10);border:1px solid rgba(139,0,0,0.07);">
+      <div style="width:28px;height:28px;border:3px solid #e8edf4;border-top-color:#C0392B;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <span style="font-size:0.9rem;color:#4a5568;font-weight:500;">Cargando datos desde Google Sheets…</span>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+    <div class="section-title">📊 Resultados por Jefe de Práctica</div>
+    <div class="jdp-grid" id="jdp-grid"></div>
+
+    <div class="comments-section">
+      <div class="comments-header">💬 Detalle de Respuestas</div>
+      <div class="comments-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Estudiante</th><th>Horario</th><th>Curso</th>
+              <th>JdPs evaluados</th><th>Prom.</th>
+              <th>Comentario del curso</th><th>Mejoras sugeridas</th><th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody id="comments-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="page-footer"><strong>Asociación de Estudiantes de Ingeniería Electrónica</strong> · Panel de Administrador</footer>
+  </div>
+</div>
+
+<script>
+/* ── CONFIGURACIÓN ─────────────────────────────────────── */
+/* Reemplaza estos valores con los tuyos (ver README.md)   */
+const CONFIG = {
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx9uvOyjXxPruqsdDgBr3FQ0s5dSgWf3rXN6g0kqh9JNVpxn9orhLn1iAyFWOo468l3/exec',
+  SHEET_ID:        '1zEz9A3oiL-uSph_9XC9TRi5EOsiKvi2kkQD9XcD6Fr0',
+  ADMIN_PASSWORD:  'aEe2024admin'   // cambia esto
+};
+
+/* ── DIMENSIONES ────────────────────────────────────────── */
+const DIMENSIONS=[
+  {key:"dominio",          label:"Dominio del tema",                   icon:"🎓", preguntas:["d1","d2"]},
+  {key:"claridad",         label:"Claridad al explicar",               icon:"💡", preguntas:["c1","c2"]},
+  {key:"puntualidad",      label:"Puntualidad y asistencia",           icon:"⏰", preguntas:["p1","p2"]},
+  {key:"disponibilidad",   label:"Disponibilidad y apoyo",             icon:"🤝", preguntas:["dis1","dis2"]},
+  {key:"retroalimentacion",label:"Calidad de retroalimentación",       icon:"📝", preguntas:["r1","r2","r3"]},
+  {key:"notas",            label:"Puntualidad entrega de notas",       icon:"📊", preguntas:["n1","n2"]},
+  {key:"empatia",          label:"Empatía y paciencia",                icon:"❤️", preguntas:["e1","e2","e3"]}
+];
+
+/* ── STOPWORDS ──────────────────────────────────────────── */
+const STOPWORDS=new Set(['el','la','los','las','un','una','unos','unas','de','del','al','en','y','o','a','que','se','es','son','fue','con','por','para','su','sus','lo','le','les','me','te','nos','pero','si','no','mas','más','muy','bien','mal','todo','todos','toda','todas','este','esta','estos','estas','como','hay','ser','estar','tiene','tienen','da','dan','ha','han','cada','tambien','también','solo','sólo','creo','poco','mucho','mucha','muchos','muchas','hace','hacer','puede','poder','vez','veces','tipo','algo','aqui','aquí','eso','esa','ese','ellos','ellas','porque','cuando','durante','ya','fue','así','asi','mi','mis','tu','tus','nos','nuestro','veces','clase','clases','practica','prácticas','práctica','jefe','jefes','curso','cursos','horario']);
+
+/* ── AUTH ───────────────────────────────────────────────── */
+function doLogin(){
+  if(document.getElementById('pwd-input').value===CONFIG.ADMIN_PASSWORD){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    document.getElementById('login-error').classList.remove('show');
+    loadDashboard();
+  }else{
+    document.getElementById('login-error').classList.add('show');
+    document.getElementById('pwd-input').value='';
+  }
+}
+function doLogout(){
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('pwd-input').value='';
+}
+document.getElementById('pwd-input').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+/* ── DATA: fetch from Google Sheets via Apps Script ─────── */
+let cachedData = [];
+
+async function fetchData(){
+  showLoading(true);
+  try {
+    const url = CONFIG.APPS_SCRIPT_URL + '?action=getData';
+    const res  = await fetch(url);
+    const json = await res.json();
+    if(json.success){
+      cachedData = json.data;
+    } else {
+      console.error('Error fetching data:', json.error);
+      alert('Error al cargar los datos: ' + (json.error||'desconocido'));
+    }
+  } catch(err){
+    console.error('Fetch error:', err);
+    alert('No se pudo conectar con la base de datos. Verifica la URL del Apps Script en CONFIG.');
+  }
+  showLoading(false);
+}
+
+function showLoading(show){
+  const el = document.getElementById('loading-indicator');
+  if(el) el.style.display = show ? 'flex' : 'none';
+}
+
+function getData(){ return cachedData; }
+
+function getFiltered(){
+  const curso   = document.getElementById('filter-curso')?.value||'';
+  const horario = document.getElementById('filter-horario')?.value||'';
+  const search  = (document.getElementById('search-jdp')?.value||'').toLowerCase();
+  return cachedData.filter(r=>{
+    if(curso   && r.cursoKey   !== curso)   return false;
+    if(horario && r.horario    !== horario) return false;
+    if(search){
+      const names = Object.keys(r.ratings||{}).join(' ').toLowerCase();
+      if(!names.includes(search)) return false;
+    }
+    return true;
+  });
+}
+
+/* ── DASHBOARD ──────────────────────────────────────────── */
+async function loadDashboard(){
+  await fetchData();
+  const all = getData();
+  populateFilters(all);
+  renderDashboard();
+}
+
+function populateFilters(data){
+  const cursos   = [...new Set(data.map(r=>r.cursoKey+'||'+(r.cursoNombre||r.cursoKey)))].sort();
+  const horarios = [...new Set(data.map(r=>r.horario))].sort();
+  const selC=document.getElementById('filter-curso'); const curC=selC.value;
+  selC.innerHTML='<option value="">Todos los cursos</option>'+
+    cursos.map(v=>{const[k,n]=v.split('||');return`<option value="${k}"${k===curC?' selected':''}>${n}</option>`;}).join('');
+  const selH=document.getElementById('filter-horario'); const curH=selH.value;
+  selH.innerHTML='<option value="">Todos los horarios</option>'+
+    horarios.map(v=>`<option value="${v}"${v===curH?' selected':''}>${v}</option>`).join('');
+}
+
+function avg(arr){if(!arr.length)return 0;return arr.reduce((a,b)=>a+b,0)/arr.length;}
+function stars(s){const f=Math.round(s);return'★'.repeat(f)+'☆'.repeat(5-f);}
+
+function renderDashboard(){
+  const data=getFiltered();
+  renderStats(data);
+  renderJdpCards(data);
+  renderComments(data);
+}
+
+/* ── HELPERS ────────────────────────────────────────────── */
+function getRatings(obj){
+  if(!obj) return {};
+  if(obj.ratings && typeof obj.ratings==='object') return obj.ratings;
+  if(typeof obj.dominio!=='undefined'||typeof obj.claridad!=='undefined') return obj;
+  return {};
+}
+function getJdpComentario(obj){
+  if(!obj) return '';
+  if(typeof obj.comentario==='string') return obj.comentario;
+  return '';
+}
+function extractKeywords(texts,topN=8){
+  const freq={};
+  texts.forEach(t=>{
+    if(!t)return;
+    t.toLowerCase().replace(/[^a-záéíóúüñ\s]/gi,' ').split(/\s+/).forEach(w=>{
+      if(w.length>3&&!STOPWORDS.has(w)){freq[w]=(freq[w]||0)+1;}
+    });
+  });
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,topN).map(([w,c])=>({word:w,count:c}));
+}
+function buildJdpMap(data){
+  const byJdp={};
+  data.forEach(r=>{
+    Object.entries(r.ratings||{}).forEach(([jdpName,obj])=>{
+      if(!byJdp[jdpName])byJdp[jdpName]={nombre:jdpName,cursos:new Set(),horarios:new Set(),responses:[],comentarios:[]};
+      byJdp[jdpName].cursos.add(r.cursoNombre||r.cursoKey);
+      byJdp[jdpName].horarios.add(r.horario);
+      byJdp[jdpName].responses.push(getRatings(obj));
+      const c=getJdpComentario(obj);if(c)byJdp[jdpName].comentarios.push(c);
+    });
+  });
+  return byJdp;
+}
+function esc(str){if(!str)return'';return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ── STATS ──────────────────────────────────────────────── */
+function renderStats(data){
+  const allJdps=new Set();const allCursos=new Set();const allScores=[];
+  data.forEach(r=>{
+    allCursos.add(r.cursoKey);
+    Object.entries(r.ratings||{}).forEach(([jdp,obj])=>{
+      allJdps.add(jdp);
+      const vals=Object.values(getRatings(obj)).filter(v=>v!=null);
+      if(vals.length)allScores.push(avg(vals));
+    });
+  });
+  const ag=allScores.length?avg(allScores).toFixed(2):'—';
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-num">${data.length}</div><div class="stat-label">Respuestas totales</div></div>
+    <div class="stat-card"><div class="stat-icon">👤</div><div class="stat-num">${allJdps.size}</div><div class="stat-label">JdPs evaluados</div></div>
+    <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-num">${allCursos.size}</div><div class="stat-label">Cursos distintos</div></div>
+    <div class="stat-card" style="border-top-color:var(--aee-yellow)"><div class="stat-icon">⭐</div><div class="stat-num">${ag}</div><div class="stat-label">Promedio general / 5.00</div></div>`;
+}
+
+/* ── JDP CARDS ──────────────────────────────────────────── */
+function renderJdpCards(data){
+  const container=document.getElementById('jdp-grid');
+  if(!data.length){
+    container.innerHTML=`<div class="no-data" style="grid-column:1/-1"><div class="no-data-icon">📭</div><h3>Sin respuestas aún</h3><p>Cuando los estudiantes completen la encuesta, los resultados aparecerán aquí.</p></div>`;
+    return;
+  }
+  const byJdp=buildJdpMap(data);
+  container.innerHTML=Object.values(byJdp).map(group=>{
+    const rs=group.responses;const n=rs.length;
+    const dimAvgs=DIMENSIONS.map(dim=>{
+      const vals=rs.flatMap(r=>dim.preguntas.map(k=>r[k]).filter(v=>v!=null));
+      return{label:dim.label,icon:dim.icon,avg:vals.length?avg(vals):0};
+    });
+    const overall=avg(dimAvgs.map(d=>d.avg)).toFixed(2);
+    const criteriaHTML=dimAvgs.map(d=>{
+      const val=d.avg.toFixed(1);const pct=(d.avg/5)*100;
+      return`<li><span class="c-name">${d.icon} ${d.label}</span><div class="c-wrap"><div class="c-bar-bg"><div class="c-bar-fill" style="width:${pct}%"></div></div><span class="c-val">${val}</span></div></li>`;
+    }).join('');
+    const kws=extractKeywords(group.comentarios,6);
+    const kwHTML=kws.length?`<div class="keywords-wrap"><div class="keywords-label">💬 Palabras clave</div><div class="keywords">${kws.map(k=>`<span class="keyword-tag">${k.word} (${k.count})</span>`).join('')}</div></div>`:'';
+    return`<div class="jdp-card">
+      <div class="jdp-card-header">
+        <div class="jdp-name">${esc(group.nombre)}</div>
+        <div class="jdp-meta"><span>📚 ${[...group.cursos].join(', ')}</span><span>🏫 ${[...group.horarios].join(', ')}</span></div>
+      </div>
+      <div class="jdp-body">
+        <div class="overall-score">
+          <div class="score-big">${overall}</div>
+          <div class="score-info"><div class="score-stars">${stars(parseFloat(overall))}</div><div class="score-label">Promedio general</div><div class="vote-count">${n} evaluación${n!==1?'es':''}</div></div>
+        </div>
+        <ul class="criteria-list">${criteriaHTML}</ul>
+        ${kwHTML}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── COMMENTS TABLE ─────────────────────────────────────── */
+function renderComments(data){
+  const tbody=document.getElementById('comments-body');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-light)">Sin datos para mostrar</td></tr>';return;}
+  tbody.innerHTML=[...data].reverse().map(r=>{
+    const jdpNames=Object.keys(r.ratings||{});
+    const allS=[];
+    jdpNames.forEach(jdp=>{const vals=Object.values(getRatings(r.ratings[jdp])).filter(v=>v!=null);if(vals.length)allS.push(avg(vals));});
+    const oa=allS.length?avg(allS).toFixed(1):'—';
+    const fecha=new Date(r.timestamp).toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+    return`<tr>
+      <td class="td-name">${esc(r.nombre)}</td>
+      <td><span class="badge">${esc(r.ciclo||'')}</span></td>
+      <td><span class="badge">${esc(r.horario)}</span></td>
+      <td>${esc(r.cursoNombre||r.cursoKey)}</td>
+      <td style="font-size:0.78rem">${jdpNames.map(j=>`<div>${esc(j)}</div>`).join('')}</td>
+      <td class="td-score"><span class="star-inline">★</span> ${oa}</td>
+      <td style="max-width:160px">${esc(r.comentario||'—')}</td>
+      <td style="max-width:160px">${esc(r.mejora||'—')}</td>
+      <td style="white-space:nowrap;color:var(--text-light)">${fecha}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── REFRESH BUTTON ─────────────────────────────────────── */
+async function refreshData(){
+  await loadDashboard();
+}
+
+/* ── PDF GENERATOR ──────────────────────────────────────── */
+function generatePDF(){
+  const data=getFiltered();
+  if(!data.length){alert('No hay datos para generar el reporte.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210;const M=14;const CW=W-M*2;let y=0;
+  const RED=[139,0,0];const RED_MID=[192,57,43];const GOLD=[212,160,23];
+  const WHITE=[255,255,255];const OFFWHITE=[245,247,250];const LGRAY=[232,237,244];
+  const TEXTDARK=[26,35,50];const TEXTMID=[74,85,104];const TEXTLIGHT=[113,128,150];
+  function setFont(style,size,color){doc.setFont('helvetica',style);doc.setFontSize(size);if(color)doc.setTextColor(...color);}
+  function fillRect(x,ry,w,h,color){doc.setFillColor(...color);doc.rect(x,ry,w,h,'F');}
+  function line(x1,ry,x2,ry2,color,lw=0.3){doc.setDrawColor(...(color||LGRAY));doc.setLineWidth(lw);doc.line(x1,ry,x2,ry2);}
+  function checkPage(need=20){if(y+need>284){doc.addPage();y=M;}}
+
+  // ── PORTADA / HEADER ──────────────────────────────────
+  fillRect(0,0,W,42,RED);fillRect(0,42,W,3,GOLD);
+  setFont('bold',14,WHITE);doc.text('AEE',M+10,24,{align:'center'});
+  // CAMBIO: "Evaluación Docente" → "Jefes de Práctica"
+  setFont('bold',15,WHITE);doc.text('Reporte de Evaluación de Jefes de Práctica',M+26,17);
+  setFont('normal',9,[255,200,200]);doc.text('Asociación de Estudiantes de Ingeniería Electrónica',M+26,25);
+  setFont('normal',8,[255,200,200]);doc.text('Generado: '+new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}),M+26,32);
+  y=54;
+
+  // ── AGRUPAR POR CURSO ─────────────────────────────────
+  const byCourse={};
+  data.forEach(r=>{
+    const k=r.cursoKey;
+    if(!byCourse[k])byCourse[k]={nombre:r.cursoNombre||r.cursoKey,horarios:{}};
+    const h=r.horario;
+    if(!byCourse[k].horarios[h])byCourse[k].horarios[h]={jdps:{}};
+    Object.entries(r.ratings||{}).forEach(([jdpName,obj])=>{
+      if(!byCourse[k].horarios[h].jdps[jdpName])
+        byCourse[k].horarios[h].jdps[jdpName]={responses:[],comentarios:[]};
+      byCourse[k].horarios[h].jdps[jdpName].responses.push(getRatings(obj));
+      const jdpC=getJdpComentario(obj);
+      if(jdpC)byCourse[k].horarios[h].jdps[jdpName].comentarios.push(jdpC);
+    });
+  });
+
+  // Abreviaciones fijas para las 7 dimensiones (más cortas para que no se encimen)
+  const DIM_ABBR=['Dom.','Clar.','Puntual.','Dispon.','Calidad','Notas','Empatía'];
+
+  Object.values(byCourse).forEach(course=>{
+    // ── TÍTULO DEL CURSO ────────────────────────────────
+    checkPage(30);
+    fillRect(M,y,CW,12,RED_MID);
+    setFont('bold',11,WHITE);doc.text(course.nombre,M+4,y+8);
+    y+=16;
+    setFont('normal',8,TEXTLIGHT);
+    const totalR=data.filter(r=>(r.cursoNombre||r.cursoKey)===course.nombre).length;
+    doc.text(`Total respuestas: ${totalR}`,M,y);y+=9;
+
+    Object.entries(course.horarios).sort().forEach(([horario,hData])=>{
+      checkPage(24);
+      // Sub-cabecera de horario
+      fillRect(M,y,CW,8,OFFWHITE);
+      setFont('bold',9,RED_MID);doc.text(`Horario: ${horario}`,M+3,y+5.5);y+=12;
+
+      // ── CABECERA DE LA TABLA ──────────────────────────
+      // Columnas: Nombre JdP (fija 58mm) | 7 dims (repartidas) | PROM (22mm)
+      const colName=M;
+      const colProm=M+CW-22;
+      const dimsTotal=colProm-colName-58;          // ancho disponible para 7 dims
+      const dw=dimsTotal/DIMENSIONS.length;        // ancho por dimensión
+
+      fillRect(M,y,CW,8,LGRAY);
+      setFont('bold',6,[139,0,0]);
+      doc.text('Jefe de Práctica',colName+2,y+5.5);
+      // Encabezados de dimensión con abreviación corta
+      DIMENSIONS.forEach((dim,i)=>{
+        const cx=colName+58+i*dw+dw/2;
+        doc.text(DIM_ABBR[i],cx,y+5.5,{align:'center'});
+      });
+      doc.text('PROM.',colProm+11,y+5.5,{align:'center'});
+      y+=9;
+
+      // ── FILAS DE JdPs ─────────────────────────────────
+      let rowBg=false;
+      Object.entries(hData.jdps).forEach(([jdpName,jdpData])=>{
+        const rs=jdpData.responses;const n=rs.length;
+        const dimAvgArr=DIMENSIONS.map(dim=>{
+          const vals=rs.flatMap(r=>dim.preguntas.map(k=>r[k]).filter(v=>v!=null));
+          return vals.length?avg(vals):0;
+        });
+        const prom=avg(dimAvgArr);
+
+        // Calcular altura de fila (nombre puede ocupar 2 líneas)
+        const nameLines=doc.splitTextToSize(jdpName,54);
+        const rowH=Math.max(8, nameLines.length*4+3);
+        checkPage(rowH+2);
+
+        if(rowBg)fillRect(M,y,CW,rowH,OFFWHITE);rowBg=!rowBg;
+
+        // Nombre del JdP
+        setFont('normal',6.5,TEXTDARK);
+        doc.text(nameLines,colName+2,y+4.5);
+
+        // Valores por dimensión
+        setFont('normal',7,TEXTMID);
+        dimAvgArr.forEach((dav,i)=>{
+          const cx=colName+58+i*dw+dw/2;
+          doc.text(dav.toFixed(1),cx,y+rowH/2+2,{align:'center'});
+        });
+
+        // Caja de promedio coloreada
+        const promColor=prom>=4.5?[46,125,50]:prom>=3.5?[139,0,0]:prom>=2.5?[245,127,23]:[198,40,40];
+        fillRect(colProm+1,y+1,20,6,promColor);
+        setFont('bold',8,WHITE);doc.text(prom.toFixed(2),colProm+11,y+5.5,{align:'center'});
+        setFont('normal',5.5,TEXTLIGHT);doc.text(`(${n} voto${n!==1?'s':''})`,colProm+11,y+rowH-1,{align:'center'});
+
+        y+=rowH;
+        line(M,y,M+CW,y,LGRAY,0.2);
+
+        // ── LISTA DE COMENTARIOS DEL JdP (sin palabras clave) ──
+        if(jdpData.comentarios.length){
+          checkPage(8);
+          fillRect(M,y,CW,6,OFFWHITE);
+          setFont('bold',6.5,RED_MID);
+          doc.text('Comentarios recibidos:',M+3,y+4);
+          y+=7;
+          jdpData.comentarios.forEach((c,ci)=>{
+            if(!c.trim()) return;
+            checkPage(8);
+            setFont('normal',6.5,TEXTMID);
+            const ls=doc.splitTextToSize(`${ci+1}. ${c}`,CW-8);
+            doc.text(ls,M+5,y+3);
+            y+=ls.length*4+2;
+          });
+          line(M,y,M+CW,y,LGRAY,0.15);
+          y+=3;
+        }else{
+          y+=2;
+        }
+      });
+      y+=5;
+    });
+
+    // Separador entre cursos
+    line(M,y,M+CW,y,GOLD,0.7);y+=8;
+  });
+
+  // ── PIE DE PÁGINA EN CADA HOJA ────────────────────────
+  const totalPages=doc.internal.getNumberOfPages();
+  for(let p=1;p<=totalPages;p++){
+    doc.setPage(p);
+    fillRect(0,288,W,9,RED);
+    setFont('normal',6.5,[255,200,200]);
+    // CAMBIO: "Evaluación Docente" → "Evaluación de Jefes de Práctica"
+    doc.text('Asociación de Estudiantes de Ingeniería Electrónica (AEE) · Evaluación de Jefes de Práctica',M,293.5);
+    doc.text(`Pág. ${p} / ${totalPages}`,W-M,293.5,{align:'right'});
+  }
+  doc.save(`Reporte_AEE_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+function clearAll(){
+  alert('Para borrar datos ve directamente a tu Google Sheet y elimina las filas correspondientes.');
+}
+</script>
+</body>
+</html>
