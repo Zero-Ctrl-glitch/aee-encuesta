@@ -427,136 +427,150 @@ function generatePDF(){
   if(!data.length){alert('No hay datos para generar el reporte.');return;}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const W=210;const M=18;const CW=W-M*2;let y=0;
+  const W=210;const M=14;const CW=W-M*2;let y=0;
   const RED=[139,0,0];const RED_MID=[192,57,43];const GOLD=[212,160,23];
   const WHITE=[255,255,255];const OFFWHITE=[245,247,250];const LGRAY=[232,237,244];
   const TEXTDARK=[26,35,50];const TEXTMID=[74,85,104];const TEXTLIGHT=[113,128,150];
   function setFont(style,size,color){doc.setFont('helvetica',style);doc.setFontSize(size);if(color)doc.setTextColor(...color);}
   function fillRect(x,ry,w,h,color){doc.setFillColor(...color);doc.rect(x,ry,w,h,'F');}
   function line(x1,ry,x2,ry2,color,lw=0.3){doc.setDrawColor(...(color||LGRAY));doc.setLineWidth(lw);doc.line(x1,ry,x2,ry2);}
-  function checkPage(need=20){if(y+need>285){doc.addPage();y=M;}}
-  // Header
+  function checkPage(need=20){if(y+need>284){doc.addPage();y=M;}}
+
+  // ── PORTADA / HEADER ──────────────────────────────────
   fillRect(0,0,W,42,RED);fillRect(0,42,W,3,GOLD);
-  setFont('bold',14,WHITE);doc.text('AEE',M+12,24,{align:'center'});
-  setFont('bold',16,WHITE);doc.text('Reporte de Evaluación Docente',M+30,17);
-  setFont('normal',9,[255,200,200]);doc.text('Asociación de Estudiantes de Ingeniería Electrónica',M+30,24);
-  setFont('normal',8,[255,200,200]);doc.text('Generado: '+new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}),M+30,31);
+  setFont('bold',14,WHITE);doc.text('AEE',M+10,24,{align:'center'});
+  // CAMBIO: "Evaluación Docente" → "Jefes de Práctica"
+  setFont('bold',15,WHITE);doc.text('Reporte de Evaluación de Jefes de Práctica',M+26,17);
+  setFont('normal',9,[255,200,200]);doc.text('Asociación de Estudiantes de Ingeniería Electrónica',M+26,25);
+  setFont('normal',8,[255,200,200]);doc.text('Generado: '+new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}),M+26,32);
   y=54;
-  // Group by course
+
+  // ── AGRUPAR POR CURSO ─────────────────────────────────
   const byCourse={};
   data.forEach(r=>{
     const k=r.cursoKey;
-    if(!byCourse[k])byCourse[k]={nombre:r.cursoNombre||r.cursoKey,horarios:{},comentarios:[],mejoras:[]};
-    if(r.comentario)byCourse[k].comentarios.push(r.comentario);
-    if(r.mejora)byCourse[k].mejoras.push(r.mejora);
+    if(!byCourse[k])byCourse[k]={nombre:r.cursoNombre||r.cursoKey,horarios:{}};
     const h=r.horario;
     if(!byCourse[k].horarios[h])byCourse[k].horarios[h]={jdps:{}};
     Object.entries(r.ratings||{}).forEach(([jdpName,obj])=>{
-      if(!byCourse[k].horarios[h].jdps[jdpName])byCourse[k].horarios[h].jdps[jdpName]={responses:[],comentarios:[]};
+      if(!byCourse[k].horarios[h].jdps[jdpName])
+        byCourse[k].horarios[h].jdps[jdpName]={responses:[],comentarios:[]};
       byCourse[k].horarios[h].jdps[jdpName].responses.push(getRatings(obj));
-      const jdpC=getJdpComentario(obj);if(jdpC)byCourse[k].horarios[h].jdps[jdpName].comentarios.push(jdpC);
+      const jdpC=getJdpComentario(obj);
+      if(jdpC)byCourse[k].horarios[h].jdps[jdpName].comentarios.push(jdpC);
     });
   });
+
+  // Abreviaciones fijas para las 7 dimensiones (más cortas para que no se encimen)
+  const DIM_ABBR=['Dom.','Clar.','Puntual.','Dispon.','Calidad','Notas','Empatía'];
+
   Object.values(byCourse).forEach(course=>{
+    // ── TÍTULO DEL CURSO ────────────────────────────────
     checkPage(30);
     fillRect(M,y,CW,12,RED_MID);
-    setFont('bold',12,WHITE);doc.text(course.nombre,M+4,y+8);
+    setFont('bold',11,WHITE);doc.text(course.nombre,M+4,y+8);
     y+=16;
     setFont('normal',8,TEXTLIGHT);
     const totalR=data.filter(r=>(r.cursoNombre||r.cursoKey)===course.nombre).length;
-    doc.text(`Total respuestas: ${totalR}`,M,y);y+=8;
+    doc.text(`Total respuestas: ${totalR}`,M,y);y+=9;
+
     Object.entries(course.horarios).sort().forEach(([horario,hData])=>{
-      checkPage(20);
+      checkPage(24);
+      // Sub-cabecera de horario
       fillRect(M,y,CW,8,OFFWHITE);
       setFont('bold',9,RED_MID);doc.text(`Horario: ${horario}`,M+3,y+5.5);y+=12;
-      // Table header
-      const colName=M;const colProm=M+CW-24;
-      const dimColW=(colProm-colName-64)/DIMENSIONS.length;
+
+      // ── CABECERA DE LA TABLA ──────────────────────────
+      // Columnas: Nombre JdP (fija 58mm) | 7 dims (repartidas) | PROM (22mm)
+      const colName=M;
+      const colProm=M+CW-22;
+      const dimsTotal=colProm-colName-58;          // ancho disponible para 7 dims
+      const dw=dimsTotal/DIMENSIONS.length;        // ancho por dimensión
+
       fillRect(M,y,CW,8,LGRAY);
-      setFont('bold',6.5,[139,0,0]);
-      doc.text('Jefe de Práctica',colName+2,y+5);
+      setFont('bold',6,[139,0,0]);
+      doc.text('Jefe de Práctica',colName+2,y+5.5);
+      // Encabezados de dimensión con abreviación corta
       DIMENSIONS.forEach((dim,i)=>{
-        const cx=colName+64+i*dimColW+dimColW/2;
-        doc.text(dim.label.split(' ')[0],cx,y+5,{align:'center'});
+        const cx=colName+58+i*dw+dw/2;
+        doc.text(DIM_ABBR[i],cx,y+5.5,{align:'center'});
       });
-      doc.text('PROM.',colProm+12,y+5,{align:'center'});
+      doc.text('PROM.',colProm+11,y+5.5,{align:'center'});
       y+=9;
+
+      // ── FILAS DE JdPs ─────────────────────────────────
       let rowBg=false;
       Object.entries(hData.jdps).forEach(([jdpName,jdpData])=>{
-        checkPage(14);
         const rs=jdpData.responses;const n=rs.length;
         const dimAvgArr=DIMENSIONS.map(dim=>{
           const vals=rs.flatMap(r=>dim.preguntas.map(k=>r[k]).filter(v=>v!=null));
           return vals.length?avg(vals):0;
         });
         const prom=avg(dimAvgArr);
-        const rowH=8;
+
+        // Calcular altura de fila (nombre puede ocupar 2 líneas)
+        const nameLines=doc.splitTextToSize(jdpName,54);
+        const rowH=Math.max(8, nameLines.length*4+3);
+        checkPage(rowH+2);
+
         if(rowBg)fillRect(M,y,CW,rowH,OFFWHITE);rowBg=!rowBg;
-        setFont('normal',7,TEXTDARK);
-        doc.text(doc.splitTextToSize(jdpName,60),colName+2,y+5);
+
+        // Nombre del JdP
+        setFont('normal',6.5,TEXTDARK);
+        doc.text(nameLines,colName+2,y+4.5);
+
+        // Valores por dimensión
         setFont('normal',7,TEXTMID);
         dimAvgArr.forEach((dav,i)=>{
-          const cx=colName+64+i*dimColW+dimColW/2;
-          doc.text(dav.toFixed(1),cx,y+5,{align:'center'});
+          const cx=colName+58+i*dw+dw/2;
+          doc.text(dav.toFixed(1),cx,y+rowH/2+2,{align:'center'});
         });
+
+        // Caja de promedio coloreada
         const promColor=prom>=4.5?[46,125,50]:prom>=3.5?[139,0,0]:prom>=2.5?[245,127,23]:[198,40,40];
-        fillRect(colProm+1,y+1,22,6,promColor);
-        setFont('bold',8,WHITE);doc.text(prom.toFixed(2),colProm+12,y+5.5,{align:'center'});
-        setFont('normal',6,TEXTLIGHT);doc.text(`(${n} voto${n!==1?'s':''})`,colProm+12,y+9,{align:'center'});
-        y+=rowH+2;line(M,y-1,M+CW,y-1,LGRAY,0.2);
+        fillRect(colProm+1,y+1,20,6,promColor);
+        setFont('bold',8,WHITE);doc.text(prom.toFixed(2),colProm+11,y+5.5,{align:'center'});
+        setFont('normal',5.5,TEXTLIGHT);doc.text(`(${n} voto${n!==1?'s':''})`,colProm+11,y+rowH-1,{align:'center'});
+
+        y+=rowH;
+        line(M,y,M+CW,y,LGRAY,0.2);
+
+        // ── LISTA DE COMENTARIOS DEL JdP (sin palabras clave) ──
         if(jdpData.comentarios.length){
-          checkPage(10);
-          const kws=extractKeywords(jdpData.comentarios,7);
-          if(kws.length){
-            setFont('italic',6.5,TEXTLIGHT);doc.text('Palabras clave:',M+3,y+4);
-            setFont('bold',6.5,[139,0,0]);
-            const kwLines=doc.splitTextToSize(kws.map(k=>`${k.word}(${k.count})`).join('  ·  '),CW-40);
-            doc.text(kwLines,M+35,y+4);y+=kwLines.length*4+4;
-            line(M,y,M+CW,y,LGRAY,0.15);
-          }
+          checkPage(8);
+          fillRect(M,y,CW,6,OFFWHITE);
+          setFont('bold',6.5,RED_MID);
+          doc.text('Comentarios recibidos:',M+3,y+4);
+          y+=7;
+          jdpData.comentarios.forEach((c,ci)=>{
+            if(!c.trim()) return;
+            checkPage(8);
+            setFont('normal',6.5,TEXTMID);
+            const ls=doc.splitTextToSize(`${ci+1}. ${c}`,CW-8);
+            doc.text(ls,M+5,y+3);
+            y+=ls.length*4+2;
+          });
+          line(M,y,M+CW,y,LGRAY,0.15);
+          y+=3;
+        }else{
+          y+=2;
         }
       });
-      y+=4;
+      y+=5;
     });
-    // Course summary
-    checkPage(24);
-    fillRect(M,y,CW,8,RED);setFont('bold',9,WHITE);doc.text('Resumen General del Curso',M+4,y+5.5);y+=12;
-    if(course.comentarios.length){
-      fillRect(M,y,CW,6,OFFWHITE);setFont('bold',8,RED_MID);doc.text('Comentarios generales:',M+3,y+4.2);y+=9;
-      const kwC=extractKeywords(course.comentarios,10);
-      if(kwC.length){
-        checkPage(12);
-        const linesC=doc.splitTextToSize('Palabras clave: '+kwC.map(k=>`${k.word} (${k.count})`).join('   ·   '),CW-4);
-        setFont('normal',7.5,TEXTMID);doc.text(linesC,M+3,y);y+=linesC.length*4.5+2;
-      }
-      course.comentarios.slice(0,3).forEach(c=>{
-        checkPage(10);setFont('normal',7,TEXTMID);
-        const ls=doc.splitTextToSize('• '+c,CW-6);doc.text(ls,M+5,y);y+=ls.length*4+2;
-      });y+=3;
-    }
-    if(course.mejoras.length){
-      checkPage(16);
-      fillRect(M,y,CW,6,OFFWHITE);setFont('bold',8,RED_MID);doc.text('Sugerencias de mejora:',M+3,y+4.2);y+=9;
-      const kwM=extractKeywords(course.mejoras,10);
-      if(kwM.length){
-        checkPage(12);
-        const linesM=doc.splitTextToSize('Palabras clave: '+kwM.map(k=>`${k.word} (${k.count})`).join('   ·   '),CW-4);
-        setFont('normal',7.5,TEXTMID);doc.text(linesM,M+3,y);y+=linesM.length*4.5+2;
-      }
-      course.mejoras.slice(0,3).forEach(c=>{
-        checkPage(10);setFont('normal',7,TEXTMID);
-        const ls=doc.splitTextToSize('• '+c,CW-6);doc.text(ls,M+5,y);y+=ls.length*4+2;
-      });
-    }
-    y+=10;line(M,y,M+CW,y,[212,160,23],0.6);y+=8;
+
+    // Separador entre cursos
+    line(M,y,M+CW,y,GOLD,0.7);y+=8;
   });
-  // Footer on each page
+
+  // ── PIE DE PÁGINA EN CADA HOJA ────────────────────────
   const totalPages=doc.internal.getNumberOfPages();
   for(let p=1;p<=totalPages;p++){
     doc.setPage(p);
     fillRect(0,288,W,9,RED);
-    setFont('normal',7,[255,200,200]);
-    doc.text('Asociación de Estudiantes de Ingeniería Electrónica (AEE) · Encuesta de Evaluación Docente',M,293.5);
+    setFont('normal',6.5,[255,200,200]);
+    // CAMBIO: "Evaluación Docente" → "Evaluación de Jefes de Práctica"
+    doc.text('Asociación de Estudiantes de Ingeniería Electrónica (AEE) · Evaluación de Jefes de Práctica',M,293.5);
     doc.text(`Pág. ${p} / ${totalPages}`,W-M,293.5,{align:'right'});
   }
   doc.save(`Reporte_AEE_${new Date().toISOString().slice(0,10)}.pdf`);
