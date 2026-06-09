@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Encuesta de Evaluación – AEE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --pucp-blue:#8B0000;--pucp-blue-mid:#C0392B;--pucp-blue-light:#E74C3C;
+      --pucp-gold:#D4A017;--pucp-gold-light:#F4C430;
+      --white:#fff;--off-white:#f5f7fa;--light-gray:#e8edf4;
+      --text-dark:#1a2332;--text-mid:#4a5568;--text-light:#718096;
+      --error:#c62828;
+      --shadow:0 4px 24px rgba(139,0,0,0.10);--shadow-lg:0 8px 40px rgba(139,0,0,0.16);
+      --radius:14px;--radius-sm:8px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Source Sans 3',sans-serif;background:var(--off-white);color:var(--text-dark);min-height:100vh;
+      background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(192,57,43,0.12) 0%,transparent 70%);}
+
+    /* HEADER */
+    .site-header{background:linear-gradient(135deg,var(--pucp-blue) 0%,var(--pucp-blue-mid) 60%,var(--pucp-blue-light) 100%);color:var(--white);position:relative;overflow:hidden;}
+    .site-header::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='rgba(255,255,255,0.05)' stroke-width='1'/%3E%3C/svg%3E") repeat;background-size:80px;}
+    .header-inner{max-width:1300px;margin:0 auto;padding:32px 24px 28px;position:relative;display:flex;align-items:center;gap:20px;}
+    .header-logo{width:64px;height:64px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid rgba(255,255,255,0.3);font-family:'Playfair Display',serif;font-size:20px;font-weight:700;}
+    .header-text h1{font-family:'Playfair Display',serif;font-size:clamp(1.2rem,3vw,1.6rem);font-weight:700;line-height:1.2;margin-bottom:4px;}
+    .header-text p{font-size:0.88rem;opacity:0.82;font-weight:300;}
+    .header-bar{height:4px;background:linear-gradient(90deg,var(--pucp-gold),var(--pucp-gold-light),var(--pucp-gold));}
+
+    /* LAYOUT */
+    .page-wrap{max-width:1300px;margin:0 auto;padding:28px 16px 60px;}
+    .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden;border:1px solid rgba(192,57,43,0.07);animation:fadeUp .4s ease both;}
+    .card:nth-child(2){animation-delay:.06s}.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.18s}
+    .card-header{background:linear-gradient(90deg,var(--pucp-blue),var(--pucp-blue-mid));padding:16px 24px;display:flex;align-items:center;gap:12px;}
+    .card-header-icon{width:34px;height:34px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+    .card-header h2{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--white);font-weight:600;}
+    .card-header p{font-size:0.76rem;color:rgba(255,255,255,0.75);margin-top:2px;}
+    .card-body{padding:24px;}
+    .form-row{margin-bottom:18px;}
+    .form-row:last-child{margin-bottom:0;}
+    label{display:block;font-size:0.86rem;font-weight:600;color:var(--pucp-blue);margin-bottom:7px;}
+    label .req{color:var(--error);margin-left:3px;}
+    input[type="text"],select,textarea{width:100%;padding:11px 14px;border:1.5px solid var(--light-gray);border-radius:var(--radius-sm);font-family:'Source Sans 3',sans-serif;font-size:0.93rem;color:var(--text-dark);background:var(--off-white);transition:border-color .2s,box-shadow .2s;outline:none;-webkit-appearance:none;}
+    input[type="text"]:focus,select:focus,textarea:focus{border-color:var(--pucp-blue-mid);box-shadow:0 0 0 3px rgba(192,57,43,0.11);background:var(--white);}
+    select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23C0392B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:38px;}
+    textarea{resize:vertical;min-height:78px;}
+    .field-error{font-size:0.76rem;color:var(--error);margin-top:5px;display:none;}
+    .field-error.show{display:block;}
+    input.invalid,select.invalid{border-color:var(--error)!important;}
+    .req-note{font-size:0.76rem;color:var(--text-light);margin-bottom:18px;}
+    .req-note span{color:var(--error);}
+    .page-footer{text-align:center;color:var(--text-light);font-size:0.76rem;margin-top:8px;padding-bottom:20px;}
+    .page-footer strong{color:var(--pucp-blue);}
+    .info-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(192,57,43,0.08);color:var(--pucp-blue-mid);border-radius:20px;padding:5px 12px;font-size:0.76rem;font-weight:600;margin-bottom:18px;}
+
+    /* ══════════════════════════════════════════
+       MATRIZ DE JdPs — layout principal
+    ══════════════════════════════════════════ */
+    .matrix-scroll{overflow-x:auto;margin:0 -24px;padding:0 24px 8px;}
+
+    /* La tabla matrix: primera col = preguntas, resto = JdPs */
+    .matrix-table{border-collapse:collapse;width:100%;min-width:600px;}
+
+    /* Cabecera de cada JdP */
+    .matrix-table thead tr th{padding:0;}
+    .th-question-label{width:340px;min-width:260px;padding:12px 14px;background:transparent;text-align:left;font-size:0.8rem;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;vertical-align:bottom;}
+    .th-jdp{background:linear-gradient(135deg,var(--pucp-blue),var(--pucp-blue-mid));border-radius:var(--radius-sm) var(--radius-sm) 0 0;padding:12px 10px;text-align:center;color:var(--white);min-width:130px;max-width:160px;}
+    .th-jdp:not(:last-child){border-right:2px solid var(--off-white);}
+    .jdp-th-name{font-weight:700;font-size:0.82rem;line-height:1.25;margin-bottom:3px;}
+    .jdp-th-horario{font-size:0.7rem;opacity:0.75;background:rgba(255,255,255,0.15);border-radius:10px;padding:2px 8px;display:inline-block;margin-top:3px;}
+
+    /* Filas de dimensión (título del grupo) */
+    .row-dimension td{background:linear-gradient(90deg,rgba(139,0,0,0.07),rgba(192,57,43,0.03));padding:9px 14px;border-top:2px solid rgba(192,57,43,0.15);}
+    .row-dimension .dim-label{font-size:0.82rem;font-weight:700;color:var(--pucp-blue);display:flex;align-items:center;gap:7px;}
+    .row-dimension .dim-icon{font-size:14px;}
+    .row-dimension td.dim-jdp-cell{background:linear-gradient(90deg,rgba(139,0,0,0.07),rgba(192,57,43,0.03));border-left:1px solid var(--light-gray);}
+
+    /* Filas de pregunta */
+    .row-question{border-bottom:1px solid rgba(232,237,244,0.8);}
+    .row-question:hover{background:rgba(192,57,43,0.02);}
+    .cell-question{padding:9px 14px;vertical-align:middle;}
+    .q-inner{display:flex;align-items:flex-start;gap:8px;}
+    .q-num-badge{min-width:22px;height:22px;background:var(--pucp-blue-mid);color:#fff;border-radius:50%;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+    .q-text{font-size:0.83rem;color:var(--text-mid);line-height:1.4;}
+
+    /* Celdas de estrellas */
+    .cell-stars{padding:7px 6px;text-align:center;vertical-align:middle;border-left:1px solid rgba(232,237,244,0.6);}
+    .star-row{display:flex;justify-content:center;gap:2px;flex-direction:row-reverse;}
+    .star-row input{display:none;}
+    .star-row label{font-size:20px;cursor:pointer;color:#d0d7e3;transition:color .1s,transform .1s;line-height:1;}
+    .star-row input:checked ~ label,.star-row label:hover,.star-row label:hover ~ label{color:var(--pucp-gold-light);}
+    .star-row label:hover{transform:scale(1.2);}
+    .star-score{font-size:0.64rem;color:var(--pucp-gold);font-weight:700;margin-top:3px;min-height:11px;text-align:center;}
+
+    /* Fila de comentario por JdP */
+    .row-comment td{padding:10px 14px;border-top:1px dashed var(--light-gray);background:rgba(245,247,250,0.5);}
+    .row-comment .comment-label{font-size:0.75rem;font-weight:600;color:var(--pucp-blue);margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+    .row-comment .comment-label::before{content:'💬';}
+    .row-comment textarea{width:100%;padding:8px 10px;border:1.5px solid var(--light-gray);border-radius:var(--radius-sm);font-family:'Source Sans 3',sans-serif;font-size:0.82rem;color:var(--text-dark);background:var(--white);outline:none;resize:vertical;min-height:62px;transition:border-color .2s;}
+    .row-comment textarea:focus{border-color:var(--pucp-blue-mid);box-shadow:0 0 0 2px rgba(192,57,43,0.09);}
+    .row-comment .cell-comment-stars{padding:10px 6px;border-left:1px solid var(--light-gray);vertical-align:top;}
+
+    /* SUBMIT */
+    .btn-submit{display:block;width:100%;padding:15px;background:linear-gradient(135deg,var(--pucp-blue),var(--pucp-blue-mid));color:var(--white);border:none;border-radius:var(--radius-sm);font-family:'Source Sans 3',sans-serif;font-size:1rem;font-weight:600;letter-spacing:0.4px;cursor:pointer;transition:opacity .2s,transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(139,0,0,0.22);}
+    .btn-submit:hover{opacity:0.91;transform:translateY(-1px);box-shadow:0 6px 20px rgba(139,0,0,0.28);}
+    .btn-submit:active{transform:translateY(0);}
+
+    #success-msg{display:none;background:linear-gradient(135deg,var(--pucp-blue),var(--pucp-blue-mid));color:var(--white);border-radius:var(--radius);padding:40px 32px;text-align:center;box-shadow:var(--shadow-lg);animation:fadeUp .4s ease;}
+    #success-msg .checkmark{font-size:50px;margin-bottom:14px;animation:pop .4s ease;}
+    #success-msg h2{font-family:'Playfair Display',serif;font-size:1.5rem;margin-bottom:8px;}
+    #success-msg p{font-size:0.93rem;opacity:0.85;line-height:1.5;}
+    #success-msg .gold-bar{width:56px;height:3px;background:var(--pucp-gold-light);margin:14px auto 0;border-radius:2px;}
+
+    .no-jdps-msg{background:var(--off-white);border:1.5px dashed var(--light-gray);border-radius:var(--radius-sm);padding:24px;text-align:center;color:var(--text-light);font-size:0.86rem;display:none;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pop{0%{transform:scale(0.5);opacity:0}80%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+    @media(max-width:700px){.th-question-label,.cell-question{min-width:180px;}.th-jdp,.cell-stars,.cell-comment-stars{min-width:110px;}}
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-logo">AEE</div>
+    <div class="header-text">
+      <h1>Encuesta de Evaluación Docente</h1>
+      <p>Asociación de Estudiantes de Ingeniería Electrónica · Evaluación Docente</p>
+    </div>
+  </div>
+  <div class="header-bar"></div>
+</header>
+
+<div class="page-wrap">
+  <p class="req-note">Los campos marcados con <span>*</span> son obligatorios.</p>
+
+  <form id="survey-form" novalidate>
+
+    <!-- CARD 1: Datos -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">👤</div>
+        <div>
+          <h2>Datos del Estudiante</h2>
+          <p>Completa tu nombre y selecciona tu ciclo</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <label for="nombre">Nombre completo <span class="req">*</span></label>
+          <input type="text" id="nombre" placeholder="Ej: María García López"/>
+          <div class="field-error" id="err-nombre">Por favor ingresa tu nombre completo.</div>
+        </div>
+        <div class="form-row">
+          <label for="ciclo">Ciclo académico <span class="req">*</span></label>
+          <select id="ciclo" onchange="onCicloChange()">
+            <option value="">— Selecciona tu ciclo —</option>
+            <option value="5to ciclo">5to Ciclo</option>
+            <option value="6to ciclo">6to Ciclo</option>
+          </select>
+          <div class="field-error" id="err-ciclo">Selecciona tu ciclo.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 2: Curso -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">📚</div>
+        <div>
+          <h2>Selecciona tu Curso</h2>
+          <p>Elige el curso y el horario al que perteneces</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <label for="curso">Curso <span class="req">*</span></label>
+          <select id="curso" onchange="onCursoChange()" disabled>
+            <option value="">— Primero selecciona tu ciclo —</option>
+          </select>
+          <div class="field-error" id="err-curso">Selecciona un curso.</div>
+        </div>
+        <div class="form-row" id="row-horario" style="display:none">
+          <label for="horario">Horario (aula) <span class="req">*</span></label>
+          <select id="horario" onchange="onHorarioChange()">
+            <option value="">— Selecciona tu horario —</option>
+          </select>
+          <div class="field-error" id="err-horario">Selecciona tu horario.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 3: Matriz de evaluación -->
+    <div class="card" id="card-ratings" style="display:none">
+      <div class="card-header">
+        <div class="card-header-icon">⭐</div>
+        <div>
+          <h2>Evaluación de Jefes de Práctica</h2>
+          <p>Califica del 1 (muy en desacuerdo) al 5 (muy de acuerdo) · La numeración reinicia por cada dimensión</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="info-badge">💡 Todos los JdPs de tu horario aparecen lado a lado para que puedas comparar y calificar juntos</div>
+        <div class="no-jdps-msg" id="no-jdps-msg">No hay Jefes de Práctica registrados para este horario.</div>
+        <div class="matrix-scroll">
+          <table class="matrix-table" id="matrix-table">
+            <thead id="matrix-head"></thead>
+            <tbody id="matrix-body"></tbody>
+          </table>
+        </div>
+        <div class="field-error" id="err-ratings" style="margin-top:10px;">Por favor responde todas las preguntas antes de enviar.</div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-submit" id="btn-submit" style="display:none">
+      Enviar evaluación →
+    </button>
+  </form>
+
+  <div id="success-msg">
+    <div class="checkmark">✅</div>
+    <h2>¡Gracias por tu evaluación!</h2>
+    <p>Tu respuesta ha sido registrada exitosamente.<br>Tu opinión contribuye<script>
+/* ── CONFIGURACIÓN ─────────────────────────────────────── */
+/* INSTRUCCIONES: reemplaza el valor de APPS_SCRIPT_URL    */
+/* con la URL de tu Google Apps Script (ver README.md)     */
+const CONFIG = {
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx9uvOyjXxPruqsdDgBr3FQ0s5dSgWf3rXN6g0kqh9JNVpxn9orhLn1iAyFWOo468l3/exec'
+};
+
+/* ── BASE DE DATOS ─────────────────────────────────────── */
+const DB = {
+  "1IEE12":{
+    nombre:"Circuitos Eléctricos 2", ciclo:"5to ciclo",
+    horarios:{
+      "PRACTICA|0521":{seccion:"PRÁCTICA",  display:"0521", jdps:[{nombre:"ALIAGA ARANA, STALIN AUGUSTO"},{nombre:"GIRALDO SOLIS, MAYTE ROCIEL"},{nombre:"JULCA AVILA, MIGUEL ANGEL"}]},
+      "LAB|0522":     {seccion:"LABORATORIO",display:"0522", jdps:[{nombre:"BRUNO GUTIERREZ, JOSE LUIS"},{nombre:"DIAZ GODOS, DIEGO FERNANDO"},{nombre:"JULCA AVILA, MIGUEL ANGEL"}]},
+      "LAB|0523":     {seccion:"LABORATORIO",display:"0523", jdps:[{nombre:"ALIAGA ARANA, STALIN AUGUSTO"},{nombre:"DIAZ GODOS, DIEGO FERNANDO"}]},
+      "LAB|0524":     {seccion:"LABORATORIO",display:"0524", jdps:[{nombre:"ALIAGA ARANA, STALIN AUGUSTO"},{nombre:"JULCA AVILA, MIGUEL ANGEL"}]}
+    }
+  },
+  "1IEE26":{
+    nombre:"Circuitos Analógicos", ciclo:"5to ciclo",
+    horarios:{
+      "0521":[{nombre:"TORRES PADILLA, SEBASTIAN JESUS"}],
+      "0522":[{nombre:"CIFUENTES CUADROS, ALONSO ANDRE"},{nombre:"TORRES PADILLA, SEBASTIAN JESUS"}]
+    }
+  },
+  "1ING05":{
+    nombre:"Comunicación e Investigación para Ingenieros", ciclo:"5to ciclo",
+    horarios:{
+      "0521":[{nombre:"ALATRISTA DEL AGUILA, ROCIO MIRELY"},{nombre:"GAMARRA RUIZ, MARLON MARCIELO"},{nombre:"PAZ VILLAVICENCIO, JOSE MARTÍN"}],
+      "0522":[{nombre:"ALATRISTA DEL AGUILA, ROCIO MIRELY"},{nombre:"GAMARRA RUIZ, MARLON MARCIELO"},{nombre:"PAZ VILLAVICENCIO, JOSE MARTÍN"}],
+      "0524":[{nombre:"ALATRISTA DEL AGUILA, ROCIO MIRELY"},{nombre:"GAMARRA RUIZ, MARLON MARCIELO"}]
+    }
+  },
+  "1MAT37":{
+    nombre:"Procesamiento de Señales", ciclo:"5to ciclo",
+    horarios:{
+      "PRACTICA|0521":{seccion:"PRÁCTICA",  display:"0521", jdps:[{nombre:"AVILES LINO, ESTEBAN ROLANDO"},{nombre:"BARRIGA MONGE, BRUNO RUSSELL"},{nombre:"DELGADO YNGA, CARLOS ALBERTO"},{nombre:"PARIONA AGUINAGA, CARLOS ADOLFO"}]},
+      "LAB|0521":     {seccion:"LABORATORIO",display:"0521", jdps:[{nombre:"AVILES LINO, ESTEBAN ROLANDO"},{nombre:"BARRIGA MONGE, BRUNO RUSSELL"},{nombre:"DELGADO YNGA, CARLOS ALBERTO"}]},
+      "LAB|0522":     {seccion:"LABORATORIO",display:"0522", jdps:[{nombre:"BARRIGA MONGE, BRUNO RUSSELL"},{nombre:"PARIONA AGUINAGA, CARLOS ADOLFO"}]}
+    }
+  },
+  "IEE256":{
+    nombre:"Sistemas Digitales", ciclo:"5to ciclo",
+    horarios:{
+      "0525":[{nombre:"DELGADO YNGA, CARLOS ALBERTO"},{nombre:"SARMIENTO PUMARAYME, VALENTIN JORGE"},{nombre:"VILLARREAL SANCHEZ, FRANCE STEVE"}],
+      "0526":[{nombre:"GARCIA MUNAYCO, JUAN DIEGO ELVIS"},{nombre:"SANCHEZ PONCE, ROLANDO"},{nombre:"SARMIENTO PUMARAYME, VALENTIN JORGE"}],
+      "0527":[{nombre:"DELGADO YNGA, CARLOS ALBERTO"},{nombre:"PURIZAGA TORDOYA, ARTURO"},{nombre:"SARMIENTO PUMARAYME, VALENTIN JORGE"}]
+    }
+  },
+  "1IEE13":{
+    nombre:"Fabricación de Equipos Electrónicos", ciclo:"6to ciclo",
+    horarios:{
+      "0621":[
+        {nombre:"CONTRERAS PAUCCA, JHOMER RODRIGO"},
+        {nombre:"MUGABURU CELI, MARCO ANTONIO"},
+        {nombre:"ROMERO MUÑIZ, ENZO FERNANDO"},
+        {nombre:"COOK MENESES, JORDI ALEXIS"},
+        {nombre:"CÓRDOVA TORRES, MAURICIO FRANCISCO"},
+        {nombre:"DIAZ GODOS, DIEGO FERNANDO"},
+        {nombre:"ZEVILLANOS BEGAZO, CHRISTIAN GIOVANNI"}
+      ]
+    }
+  }
+};
+
+const CURSOS_POR_CICLO = {
+  "5to ciclo":[
+    {key:"1IEE12",label:"1IEE12 · Circuitos Eléctricos 2"},
+    {key:"1IEE26",label:"1IEE26 · Circuitos Analógicos"},
+    {key:"1ING05",label:"1ING05 · Comunicación e Investigación para Ingenieros"},
+    {key:"1MAT37",label:"1MAT37 · Procesamiento de Señales"},
+    {key:"IEE256",label:"IEE256 · Sistemas Digitales"}
+  ],
+  "6to ciclo":[
+    {key:"1IEE13",label:"1IEE13 · Fabricación de Equipos Electrónicos"}
+  ]
+};
+
+function getJdps(cursoKey,horarioKey){
+  const h=DB[cursoKey]?.horarios[horarioKey];
+  if(!h) return [];
+  return h.jdps||h;
+}
+function getHorarioLabel(cursoKey,horarioKey){
+  const h=DB[cursoKey]?.horarios[horarioKey];
+  if(!h) return horarioKey;
+  if(h.seccion) return h.seccion+' · Horario '+h.display;
+  return 'Horario '+horarioKey;
+}
+function getHorarioOptionText(cursoKey,horarioKey){
+  const h=DB[cursoKey]?.horarios[horarioKey];
+  if(!h) return horarioKey+' (Presencial)';
+  if(h.seccion) return h.seccion+' – '+h.display+' (Presencial)';
+  return horarioKey+' (Presencial)';
+}
+
+/* ── DIMENSIONES Y PREGUNTAS ───────────────────────────── */
+const DIMENSIONS = [
+  {
+    key:"dominio", label:"Dominio del tema", icon:"🎓",
+    preguntas:[
+      {key:"d1", num:1, text:"Demuestra un conocimiento profundo y seguro sobre todos los temas abordados en el curso."},
+      {key:"d2", num:2, text:"Resuelve de manera correcta y precisa las preguntas o dudas técnicas planteadas durante la práctica."}
+    ]
+  },
+  {
+    key:"claridad", label:"Claridad al explicar", icon:"💡",
+    preguntas:[
+      {key:"c1", num:1, text:"Explica los procedimientos, conceptos y ejercicios de manera sencilla y directa."},
+      {key:"c2", num:2, text:"Mantiene un ritmo de enseñanza adecuado que permite procesar la información sin confusiones."}
+    ]
+  },
+  {
+    key:"retroalimentacion", label:"Calidad de retroalimentación", icon:"📝",
+    preguntas:[
+      {key:"r1", num:1, text:"Identifica y señala de manera precisa los errores cometidos en los trabajos, prácticas o exámenes."},
+      {key:"r2", num:2, text:"Se toma el tiempo de explicar por qué se cometió el error y detalla cuál es la manera correcta de resolverlo."},
+      {key:"r3", num:3, text:"Sus comentarios y correcciones aportan valor y ayudan de manera efectiva a no repetir fallas en futuras evaluaciones."}
+    ]
+  },
+  {
+    key:"notas", label:"Puntualidad con entrega de notas", icon:"📊",
+    preguntas:[
+      {key:"n1", num:1, text:"Respeta estrictamente los plazos acordados o establecidos por el curso para la entrega de calificaciones."}
+    ]
+  },
+  {
+    key:"empatia", label:"Empatía y paciencia", icon:"❤️",
+    preguntas:[
+      {key:"e1", num:1, text:"Demuestra paciencia y plena disposición para repetir una explicación si el grupo o el alumno aún no lo comprende."},
+      {key:"e2", num:2, text:"Fomenta un ambiente seguro y de confianza, donde los alumnos no sienten temor o vergüenza al preguntar o equivocarse."}
+    ]
+  }
+];
+
+const ratingLabels={1:"Muy en desacuerdo",2:"En desacuerdo",3:"Neutral",4:"De acuerdo",5:"Muy de acuerdo"};
+function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');}
+
+/* ── EVENTOS ───────────────────────────────────────────── */
+function onCicloChange(){
+  const ciclo=document.getElementById('ciclo').value;
+  const cursoSel=document.getElementById('curso');
+  document.getElementById('row-horario').style.display='none';
+  document.getElementById('horario').innerHTML='<option value="">— Selecciona tu horario —</option>';
+  document.getElementById('card-ratings').style.display='none';
+  document.getElementById('btn-submit').style.display='none';
+  clearMatrix();
+  cursoSel.innerHTML='<option value="">— Selecciona un curso —</option>';
+  if(!ciclo){cursoSel.disabled=true;return;}
+  (CURSOS_POR_CICLO[ciclo]||[]).forEach(c=>{
+    const o=document.createElement('option');o.value=c.key;o.textContent=c.label;cursoSel.appendChild(o);
+  });
+  cursoSel.disabled=false;
+  document.getElementById('err-ciclo').classList.remove('show');
+  document.getElementById('ciclo').classList.remove('invalid');
+}
+
+function onCursoChange(){
+  const curso=document.getElementById('curso').value;
+  const rowH=document.getElementById('row-horario');
+  const hSel=document.getElementById('horario');
+  hSel.innerHTML='<option value="">— Selecciona tu horario —</option>';
+  document.getElementById('card-ratings').style.display='none';
+  document.getElementById('btn-submit').style.display='none';
+  clearMatrix();
+  if(!curso||!DB[curso]){rowH.style.display='none';return;}
+  Object.keys(DB[curso].horarios).sort().forEach(hKey=>{
+    const o=document.createElement('option');o.value=hKey;
+    o.textContent=getHorarioOptionText(curso,hKey);
+    hSel.appendChild(o);
+  });
+  rowH.style.display='block';
+  document.getElementById('err-curso').classList.remove('show');
+  document.getElementById('curso').classList.remove('invalid');
+}
+
+function onHorarioChange(){
+  const curso=document.getElementById('curso').value;
+  const horario=document.getElementById('horario').value;
+  if(!horario){
+    document.getElementById('card-ratings').style.display='none';
+      document.getElementById('btn-submit').style.display='none';
+    clearMatrix();return;
+  }
+  const jdps=getJdps(curso,horario);
+  const horarioLabel=getHorarioLabel(curso,horario);
+  buildMatrix(jdps,horarioLabel);
+  document.getElementById('card-ratings').style.display='block';
+  document.getElementById('btn-submit').style.display='block';
+  setTimeout(()=>document.getElementById('card-ratings').scrollIntoView({behavior:'smooth',block:'start'}),150);
+  document.getElementById('err-horario').classList.remove('show');
+  document.getElementById('horario').classList.remove('invalid');
+}
+
+function clearMatrix(){
+  document.getElementById('matrix-head').innerHTML='';
+  document.getElementById('matrix-body').innerHTML='';
+}
+
+/* ── CONSTRUCCIÓN DE LA MATRIZ ─────────────────────────── */
+function buildMatrix(jdps,horarioLabel){
+  if(!jdps.length){
+    document.getElementById('no-jdps-msg').style.display='block';
+    document.getElementById('matrix-table').style.display='none';
+    return;
+  }
+  document.getElementById('no-jdps-msg').style.display='none';
+  document.getElementById('matrix-table').style.display='';
+
+  const slugs=jdps.map(j=>slugify(j.nombre));
+
+  /* THEAD */
+  let headHTML=`<tr>
+    <th class="th-question-label">Pregunta</th>
+    ${jdps.map(jdp=>`
+      <th class="th-jdp">
+        <div class="jdp-th-name">${jdp.nombre}</div>
+        <div class="jdp-th-horario">${horarioLabel}</div>
+      </th>`).join('')}
+  </tr>`;
+  document.getElementById('matrix-head').innerHTML=headHTML;
+
+  /* TBODY */
+  let bodyHTML='';
+  DIMENSIONS.forEach(dim=>{
+    bodyHTML+=`<tr class="row-dimension">
+      <td><div class="dim-label"><span class="dim-icon">${dim.icon}</span>${dim.label}</div></td>
+      ${jdps.map(()=>`<td class="dim-jdp-cell"></td>`).join('')}
+    </tr>`;
+    dim.preguntas.forEach(preg=>{
+      bodyHTML+=`<tr class="row-question">
+        <td class="cell-question">
+          <div class="q-inner">
+            <span class="q-num-badge">${preg.num}</span>
+            <span class="q-text">${preg.text}</span>
+          </div>
+        </td>
+        ${jdps.map((jdp,i)=>{
+          const slug=slugs[i];
+          const name=`${slug}_${preg.key}`;
+          let stars='';
+          for(let v=5;v>=1;v--){
+            const id=`${name}_${v}`;
+            stars+=`<input type="radio" name="${name}" id="${id}" value="${v}"><label for="${id}" title="${ratingLabels[v]}">★</label>`;
+          }
+          return`<td class="cell-stars">
+            <div class="star-row" data-name="${name}">${stars}</div>
+            <div class="star-score" id="ss_${name}"></div>
+          </td>`;
+        }).join('')}
+      </tr>`;
+    });
+  });
+
+  /* Fila de comentarios */
+  bodyHTML+=`<tr class="row-comment">
+    <td style="padding:10px 14px;vertical-align:top;">
+      <div class="comment-label">Comentario sobre cada JdP (opcional)</div>
+      <div style="font-size:0.76rem;color:var(--text-light);margin-top:2px;">Escribe en la celda del JdP correspondiente</div>
+    </td>
+    ${jdps.map((jdp,i)=>`
+      <td class="cell-comment-stars">
+        <textarea id="comment_${slugs[i]}" placeholder="Comentario sobre ${jdp.nombre.split(',')[0]}…"></textarea>
+      </td>`).join('')}
+  </tr>`;
+
+  document.getElementById('matrix-body').innerHTML=bodyHTML;
+
+  /* Live star badge */
+  document.getElementById('matrix-body').querySelectorAll('.star-row input').forEach(input=>{
+    input.addEventListener('change',()=>{
+      const badge=document.getElementById('ss_'+input.name);
+      if(badge){badge.textContent=ratingLabels[input.value];}
+      document.getElementById('err-ratings').classList.remove('show');
+    });
+  });
+}
+
+/* ── ENVÍO ─────────────────────────────────────────────── */
+document.getElementById('survey-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  if(!validate()) return;
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  const ciclo   = document.getElementById('ciclo').value;
+  const curso   = document.getElementById('curso').value;
+  const horario = document.getElementById('horario').value;
+  const jdps    = getJdps(curso, horario);
+  const slugs   = jdps.map(j => slugify(j.nombre));
+
+  const ratingsData = {};
+  jdps.forEach((jdp, i) => {
+    const slug = slugs[i];
+    ratingsData[jdp.nombre] = { ratings:{}, comentario:'' };
+    DIMENSIONS.forEach(dim => {
+      dim.preguntas.forEach(preg => {
+        const checked = document.querySelector(`input[name="${slug}_${preg.key}"]:checked`);
+        ratingsData[jdp.nombre].ratings[preg.key] = checked ? parseInt(checked.value) : null;
+      });
+    });
+    const el = document.getElementById('comment_' + slug);
+    ratingsData[jdp.nombre].comentario = el ? el.value.trim() : '';
+  });
+
+  const data = {
+    timestamp:   new Date().toISOString(),
+    nombre:      document.getElementById('nombre').value.trim(),
+    ciclo,
+    horario:     getHorarioLabel(curso, horario),
+    horarioKey:  horario,
+    cursoKey:    curso,
+    cursoNombre: DB[curso]?.nombre || curso,
+    ratings:     ratingsData,
+    comentario:  '',
+    mejora:      ''
+  };
+
+  try {
+    // Send to Google Apps Script Web App
+    await fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode:   'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    // no-cors means we can't read the response, but if no error is thrown it worked
+    document.getElementById('survey-form').style.display = 'none';
+    document.getElementById('success-msg').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(err) {
+    btn.disabled = false;
+    btn.textContent = 'Enviar evaluación →';
+    alert('Error al enviar. Verifica tu conexión e intenta de nuevo.');
+    console.error(err);
+  }
+});
+
+/* ── VALIDACIÓN ────────────────────────────────────────── */
+function validate(){
+  let ok=true;
+  const nombre=document.getElementById('nombre');
+  if(!nombre.value.trim()){nombre.classList.add('invalid');document.getElementById('err-nombre').classList.add('show');ok=false;}
+  else{nombre.classList.remove('invalid');document.getElementById('err-nombre').classList.remove('show');}
+
+  const ciclo=document.getElementById('ciclo');
+  if(!ciclo.value){ciclo.classList.add('invalid');document.getElementById('err-ciclo').classList.add('show');ok=false;}
+  else{ciclo.classList.remove('invalid');document.getElementById('err-ciclo').classList.remove('show');}
+
+  const curso=document.getElementById('curso');
+  if(!curso.value){curso.classList.add('invalid');document.getElementById('err-curso').classList.add('show');ok=false;}
+  else{curso.classList.remove('invalid');document.getElementById('err-curso').classList.remove('show');}
+
+  const horario=document.getElementById('horario');
+  if(document.getElementById('row-horario').style.display!=='none'&&!horario.value){
+    horario.classList.add('invalid');document.getElementById('err-horario').classList.add('show');ok=false;
+  }else{horario.classList.remove('invalid');document.getElementById('err-horario').classList.remove('show');}
+
+  const cursoVal=curso.value,horarioVal=horario.value;
+  const jdps=getJdps(cursoVal,horarioVal);
+  let allAnswered=true;
+  jdps.forEach(jdp=>{
+    const slug=slugify(jdp.nombre);
+    DIMENSIONS.forEach(dim=>dim.preguntas.forEach(preg=>{
+      if(!document.querySelector(`input[name="${slug}_${preg.key}"]:checked`))allAnswered=false;
+    }));
+  });
+  if(jdps.length&&!allAnswered){document.getElementById('err-ratings').classList.add('show');ok=false;}
+  else{document.getElementById('err-ratings').classList.remove('show');}
+  return ok;
+}
+
+document.getElementById('nombre').addEventListener('input',function(){
+  this.classList.remove('invalid');document.getElementById('err-nombre')?.classList.remove('show');
+});
+</script>
+</body>
+</html>
